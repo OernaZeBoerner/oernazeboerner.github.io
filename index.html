@@ -262,7 +262,7 @@
   <header>
     <div class="eyebrow">Sealed &nbsp;·&nbsp; For your eyes only</div>
     <h1>The Cryptex</h1>
-    <p class="sub">Three locks guard three letters. Solve all three to set the dials.</p>
+    <p class="sub">Six locks guard six letters. Solve all six to set the dials.</p>
   </header>
 
   <div class="dials" id="dials"></div>
@@ -370,7 +370,7 @@
   <section class="game" id="game-pass">
     <div class="panel">
       <h2>The Final Lock</h2>
-      <p class="hint" id="pass-prompt">Listen closely. The answer is hidden in the music — enter it below.</p>
+      <p class="hint" id="pass-prompt">Listen closely. Who is the song talking about?</p>
       <div class="pass-dummy" id="pass-dummy">
         <iframe
           style="border-radius:12px"
@@ -813,7 +813,7 @@ document.getElementById('cipher-entry').addEventListener('keydown',e=>{if(e.key=
    The full playlist is embedded in the HTML above (#pass-dummy).
    Matching is case-insensitive and ignores surrounding spaces.
    ============================================================ */
-const PASS_ANSWER = "CHANGE ME";                       // <-- the password your music puzzle leads to
+const PASS_ANSWER = "Ingo";                       // <-- the password your music puzzle leads to
 
 function submitPass(){
   const val=(document.getElementById('pass-entry').value||'').toUpperCase().trim();
