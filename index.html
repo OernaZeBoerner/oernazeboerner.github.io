@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cryptex</title>
+<style>
+  :root{
+    --bg:#10100e;
+    --panel:#1b1a16;
+    --brass:#c9a86a;
+    --brass-dim:#8a7344;
+    --ink:#e8e2d3;
+    --ink-dim:#9b9486;
+    --green:#5d7a4a;
+    --amber:#b6884a;
+    --slate:#3c3b35;
+    --line:#2a2924;
+    --wrong:#6e3b3b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(circle at 50% -10%, #211f1a 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    min-height:100vh;
+    padding:32px 18px 80px;
+    line-height:1.5;
+  }
+  .wrap{max-width:560px;margin:0 auto}
+  header{text-align:center;margin-bottom:8px}
+  .eyebrow{
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    letter-spacing:.42em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--brass-dim);
+    margin-bottom:10px;
+  }
+  h1{
+    font-size:42px;font-weight:400;letter-spacing:.04em;
+    color:var(--brass);
+    text-shadow:0 1px 0 #000;
+  }
+  .sub{color:var(--ink-dim);font-size:15px;margin-top:8px}
+
+  /* progress rings = the cryptex dials */
+  .dials{
+    display:flex;gap:8px;justify-content:center;
+    margin:26px 0 8px;
+  }
+  .dial{
+    width:46px;height:58px;border-radius:7px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,#26241e,#15140f);
+    display:flex;align-items:center;justify-content:center;
+    font-family:ui-monospace,monospace;font-size:22px;
+    color:var(--slate);
+    box-shadow:inset 0 0 12px #000;
+    transition:.4s;
+  }
+  .dial.lit{
+    color:#0e0d0a;
+    background:linear-gradient(180deg,var(--brass),var(--brass-dim));
+    border-color:var(--brass);
+    box-shadow:0 0 16px rgba(201,168,106,.45);
+  }
+
+  .tabs{
+    display:flex;gap:6px;margin:30px 0 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .tab{
+    flex:1;padding:12px 6px;background:none;border:none;cursor:pointer;
+    color:var(--ink-dim);font-family:ui-monospace,monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    border-bottom:2px solid transparent;transition:.2s;
+  }
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--brass);border-bottom-color:var(--brass)}
+  .tab .check{color:var(--green);margin-left:5px}
+
+  .game{display:none}
+  .game.active{display:block;animation:fade .35s}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+
+  .panel{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:22px;margin-bottom:18px;
+  }
+  .panel h2{font-weight:400;font-size:22px;color:var(--brass);margin-bottom:4px}
+  .panel p.hint{color:var(--ink-dim);font-size:14px;margin-bottom:18px}
+
+  /* ---- WORDLE ---- */
+  #wordle-grid{display:grid;gap:6px;justify-content:center;margin-bottom:16px}
+  .row{display:grid;grid-template-columns:repeat(5,52px);gap:6px}
+  .cell{
+    width:52px;height:52px;border:2px solid var(--slate);
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;text-transform:uppercase;font-family:ui-monospace,monospace;
+    color:var(--ink);transition:.25s;
+  }
+  .cell.filled{border-color:var(--ink-dim)}
+  .cell.correct{background:var(--green);border-color:var(--green);color:#fff}
+  .cell.present{background:var(--amber);border-color:var(--amber);color:#fff}
+  .cell.absent{background:var(--slate);border-color:var(--slate);color:var(--ink-dim)}
+  .wordle-input{display:flex;gap:8px;justify-content:center}
+  input[type=text]{
+    background:#0e0d0a;border:1px solid var(--line);color:var(--ink);
+    padding:10px 14px;font-size:18px;border-radius:7px;
+    font-family:ui-monospace,monospace;letter-spacing:.3em;text-transform:uppercase;
+    width:200px;text-align:center;
+  }
+  input:focus{outline:none;border-color:var(--brass)}
+
+  /* ---- CONNECTIONS ---- */
+  #conn-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .conn-tile{
+    aspect-ratio:1.6/1;border-radius:8px;border:1px solid var(--line);
+    background:#26241e;color:var(--ink);cursor:pointer;
+    font-family:ui-monospace,monospace;font-size:13px;text-transform:uppercase;
+    letter-spacing:.04em;display:flex;align-items:center;justify-content:center;
+    padding:4px;text-align:center;transition:.15s;
+  }
+  .conn-tile:hover{border-color:var(--brass-dim)}
+  .conn-tile.sel{background:var(--brass);color:#0e0d0a;border-color:var(--brass)}
+  .conn-solved{
+    grid-column:1/-1;border-radius:8px;padding:12px;text-align:center;
+    font-family:ui-monospace,monospace;font-size:13px;letter-spacing:.06em;
+    background:var(--green);color:#fff;
+  }
+  .conn-mistakes{color:var(--ink-dim);font-size:13px;font-family:ui-monospace,monospace;text-align:center;margin-bottom:12px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--brass);margin:0 2px}
+  .dot.gone{background:var(--slate)}
+
+  /* ---- MEMORY ---- */
+  #mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+  .mem-card{
+    aspect-ratio:1;border-radius:8px;cursor:pointer;position:relative;
+    perspective:600px;
+  }
+  .mem-inner{
+    width:100%;height:100%;position:relative;transition:transform .4s;
+    transform-style:preserve-3d;
+  }
+  .mem-card.flip .mem-inner,.mem-card.matched .mem-inner{transform:rotateY(180deg)}
+  .mem-face{
+    position:absolute;inset:0;border-radius:8px;display:flex;
+    align-items:center;justify-content:center;font-size:26px;
+    backface-visibility:hidden;border:1px solid var(--line);
+  }
+  .mem-front{background:linear-gradient(180deg,#26241e,#15140f);color:var(--brass-dim)}
+  .mem-front::after{content:"✦"}
+  .mem-back{background:#26241e;color:var(--brass);transform:rotateY(180deg)}
+  .mem-card.matched .mem-back{background:var(--green);color:#fff}
+
+  /* ---- CROSSWORD ---- */
+  #cross-grid{display:grid;gap:2px;justify-content:center;margin-bottom:20px}
+  .cross-row{display:flex;gap:2px}
+  .cross-cell{
+    width:40px;height:40px;position:relative;
+    background:#0e0d0a;border:1px solid var(--line);
+  }
+  .cross-cell.block{background:transparent;border:none}
+  .cross-cell input{
+    width:100%;height:100%;background:none;border:none;color:var(--ink);
+    text-align:center;font-family:ui-monospace,monospace;font-size:20px;
+    text-transform:uppercase;caret-color:var(--brass);
+  }
+  .cross-cell input:focus{outline:none;background:rgba(201,168,106,.14)}
+  .cross-cell.correct input{color:var(--green)}
+  .cross-cell.wrong input{color:#cf8a8a;background:rgba(110,59,59,.18)}
+  .cross-num{
+    position:absolute;top:1px;left:2px;font-size:9px;color:var(--brass-dim);
+    font-family:ui-monospace,monospace;pointer-events:none;
+  }
+  .cross-clues{display:flex;gap:24px;margin-bottom:18px}
+  .cross-col{flex:1}
+  .cross-col h3{
+    font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--brass-dim);font-weight:400;margin-bottom:8px;
+  }
+  .cross-col ol{list-style:none}
+  .cross-col li{font-size:13px;color:var(--ink-dim);margin-bottom:7px;display:flex;gap:7px}
+  .cross-col li b{color:var(--brass);font-family:ui-monospace,monospace;font-weight:400}
+
+  /* ---- CIPHER ---- */
+  .cipher-shift{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:18px}
+  #cipher-amount{
+    font-family:ui-monospace,monospace;font-size:22px;color:var(--brass);
+    min-width:36px;text-align:center;
+  }
+  .cipher-text{
+    background:#0e0d0a;border:1px solid var(--line);border-radius:9px;
+    padding:18px;text-align:center;margin-bottom:18px;
+    font-family:ui-monospace,monospace;font-size:20px;letter-spacing:.18em;
+    color:var(--ink);word-break:break-word;line-height:1.7;
+  }
+
+  /* ---- PASSWORD ---- */
+  .pass-dummy{
+    background:#0e0d0a;border:1px solid var(--line);border-radius:9px;
+    padding:22px;text-align:center;margin-bottom:18px;
+  }
+  .pass-link{
+    display:inline-block;color:var(--brass);text-decoration:none;font-size:18px;
+    border:1px solid var(--brass-dim);padding:10px 20px;border-radius:7px;
+    font-family:ui-monospace,monospace;letter-spacing:.06em;transition:.2s;
+  }
+  .pass-link:hover{background:var(--brass);color:#0e0d0a}
+  .pass-note{color:var(--slate);font-size:12px;margin-top:12px;font-family:ui-monospace,monospace}
+
+  /* ---- result messages ---- */
+  .msg{
+    margin-top:16px;padding:16px;border-radius:9px;font-size:15px;
+    display:none;align-items:center;gap:12px;
+  }
+  .msg.show{display:flex;animation:fade .3s}
+  .msg.win{background:rgba(93,122,74,.18);border:1px solid var(--green);color:#bcd1ab}
+  .msg.lose{background:rgba(110,59,59,.2);border:1px solid var(--wrong);color:#e0b3b3}
+  .msg .frag{
+    font-family:ui-monospace,monospace;font-size:24px;color:var(--brass);
+    letter-spacing:.2em;background:#0e0d0a;padding:4px 12px;border-radius:6px;
+  }
+  .btn{
+    background:none;border:1px solid var(--brass-dim);color:var(--brass);
+    padding:9px 18px;border-radius:7px;cursor:pointer;
+    font-family:ui-monospace,monospace;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;transition:.2s;margin-top:4px;
+  }
+  .btn:hover{background:var(--brass);color:#0e0d0a}
+
+  /* ---- finale ---- */
+  #finale{
+    text-align:center;margin-top:28px;padding:28px;border-radius:12px;
+    border:1px solid var(--brass-dim);
+    background:radial-gradient(circle at 50% 0,#2a2720,#15140f);
+    display:none;
+  }
+  #finale.show{display:block;animation:fade .5s}
+  #finale .word{
+    font-family:ui-monospace,monospace;font-size:34px;color:var(--brass);
+    letter-spacing:.34em;margin:14px 0 6px;text-shadow:0 0 20px rgba(201,168,106,.5);
+  }
+  footer{text-align:center;color:var(--slate);font-size:12px;margin-top:40px;
+    font-family:ui-monospace,monospace;letter-spacing:.1em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sealed &nbsp;·&nbsp; For your eyes only</div>
+    <h1>The Cryptex</h1>
+    <p class="sub">Three locks guard three letters. Solve all three to set the dials.</p>
+  </header>
+
+  <div class="dials" id="dials"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-game="wordle">Lock I<span class="check" data-c="wordle"></span></button>
+    <button class="tab" data-game="conn">Lock II<span class="check" data-c="conn"></span></button>
+    <button class="tab" data-game="mem">Lock III<span class="check" data-c="mem"></span></button>
+    <button class="tab" data-game="cross">Lock IV<span class="check" data-c="cross"></span></button>
+    <button class="tab" data-game="cipher">Lock V<span class="check" data-c="cipher"></span></button>
+    <button class="tab" data-game="pass">Lock VI<span class="check" data-c="pass"></span></button>
+  </div>
+
+  <!-- WORDLE -->
+  <section class="game active" id="game-wordle">
+    <div class="panel">
+      <h2>The Word</h2>
+      <p class="hint">Six guesses. Five letters. The grid will tell you how close you are.</p>
+      <div id="wordle-grid"></div>
+      <div class="wordle-input">
+        <input type="text" id="wordle-entry" maxlength="5" placeholder="guess" autocomplete="off">
+        <button class="btn" id="wordle-go">Guess</button>
+      </div>
+    </div>
+    <div class="msg win" id="wordle-win"></div>
+    <div class="msg lose" id="wordle-lose"></div>
+  </section>
+
+  <!-- CONNECTIONS -->
+  <section class="game" id="game-conn">
+    <div class="panel">
+      <h2>The Groups</h2>
+      <p class="hint">Find four groups of four. Pick four tiles, then submit. Four mistakes and the lock resets.</p>
+      <div class="conn-mistakes" id="conn-mistakes"></div>
+      <div id="conn-grid"></div>
+      <div style="text-align:center">
+        <button class="btn" id="conn-clear">Deselect</button>
+        <button class="btn" id="conn-submit">Submit</button>
+      </div>
+    </div>
+    <div class="msg win" id="conn-win"></div>
+    <div class="msg lose" id="conn-lose"></div>
+  </section>
+
+  <!-- MEMORY -->
+  <section class="game" id="game-mem">
+    <div class="panel">
+      <h2>The Pairs</h2>
+      <p class="hint">Flip the tiles two at a time and match every pair. Watch your move count.</p>
+      <div id="mem-grid"></div>
+      <div class="conn-mistakes" id="mem-moves">Moves: 0</div>
+    </div>
+    <div class="msg win" id="mem-win"></div>
+    <div class="msg lose" id="mem-lose"></div>
+  </section>
+
+  <!-- CROSSWORD -->
+  <section class="game" id="game-cross">
+    <div class="panel">
+      <h2>The Grid</h2>
+      <p class="hint">Fill every white square from the clues, then check your answer. The lock opens only when the whole grid is correct.</p>
+      <div id="cross-grid"></div>
+      <div class="cross-clues">
+        <div class="cross-col">
+          <h3>Across</h3>
+          <ol id="cross-across"></ol>
+        </div>
+        <div class="cross-col">
+          <h3>Down</h3>
+          <ol id="cross-down"></ol>
+        </div>
+      </div>
+      <div style="text-align:center">
+        <button class="btn" id="cross-check">Check grid</button>
+      </div>
+    </div>
+    <div class="msg win" id="cross-win"></div>
+    <div class="msg lose" id="cross-lose"></div>
+  </section>
+
+  <!-- CIPHER -->
+  <section class="game" id="game-cipher">
+    <div class="panel">
+      <h2>The Cipher</h2>
+      <p class="hint">A message, scrambled by a shift of the alphabet. Turn the wheel until the words make sense, then type what it says.</p>
+      <div class="cipher-shift">
+        <button class="btn" id="cipher-down">◀ shift</button>
+        <span id="cipher-amount">0</span>
+        <button class="btn" id="cipher-up">shift ▶</button>
+      </div>
+      <div class="cipher-text" id="cipher-text"></div>
+      <div class="wordle-input">
+        <input type="text" id="cipher-entry" placeholder="decoded answer" autocomplete="off">
+        <button class="btn" id="cipher-go">Submit</button>
+      </div>
+    </div>
+    <div class="msg win" id="cipher-win"></div>
+    <div class="msg lose" id="cipher-lose"></div>
+  </section>
+
+  <!-- PASSWORD (your Spotify music puzzle) -->
+  <section class="game" id="game-pass">
+    <div class="panel">
+      <h2>The Final Lock</h2>
+      <p class="hint" id="pass-prompt">Listen closely. The answer is hidden in the music — enter it below.</p>
+      <div class="pass-dummy" id="pass-dummy">
+        <iframe
+          style="border-radius:12px"
+          src="https://open.spotify.com/embed/playlist/5LbQnq4CUrdNqKWPHPD72c?utm_source=generator"
+          width="100%" height="380" frameborder="0"
+          allowfullscreen=""
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"></iframe>
+        <p class="pass-note">Listen, find the hidden word, and enter it below.</p>
+      </div>
+      <div class="wordle-input">
+        <input type="text" id="pass-entry" placeholder="enter the password" autocomplete="off">
+        <button class="btn" id="pass-go">Unlock</button>
+      </div>
+    </div>
+    <div class="msg win" id="pass-win"></div>
+    <div class="msg lose" id="pass-lose"></div>
+  </section>
+
+  <!-- FINALE -->
+  <div id="finale">
+    <div class="eyebrow" style="color:var(--brass-dim)">All locks released</div>
+    <div class="word" id="finale-word"></div>
+    <p class="sub">Spin the cryptex to this word.</p>
+  </div>
+
+  <footer>· · ·</footer>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURE YOUR PUZZLE HERE
+   ------------------------------------------------------------
+   Each game reveals one letter (a "fragment").
+   The three fragments, in tab order, spell the cryptex word.
+   Change FRAGMENTS, WORDLE_ANSWER, CONN_GROUPS, MEM_ICONS freely.
+   ============================================================ */
+
+const FRAGMENTS = { wordle:"L", conn:"O", mem:"X", cross:"S", cipher:"E", pass:"Y" };   // -> "LOXSEY" (replace!)
+const FINAL_WORD = "L O X S E Y";                                                       // shown at the end
+
+/* ---------- shared progress + dials ---------- */
+const solved = { wordle:false, conn:false, mem:false, cross:false, cipher:false, pass:false };
+const ORDER = ["wordle","conn","mem","cross","cipher","pass"];
+
+function buildDials(){
+  const d = document.getElementById('dials');
+  d.innerHTML='';
+  ORDER.forEach(g=>{
+    const el=document.createElement('div');
+    el.className='dial'; el.id='dial-'+g; el.textContent='?';
+    d.appendChild(el);
+  });
+}
+function markSolved(game){
+  solved[game]=true;
+  document.querySelector('.check[data-c="'+game+'"]').textContent=' ✓';
+  const dial=document.getElementById('dial-'+game);
+  dial.textContent=FRAGMENTS[game]; dial.classList.add('lit');
+  if(ORDER.every(g=>solved[g])) showFinale();
+}
+function showFinale(){
+  document.getElementById('finale-word').textContent=FINAL_WORD;
+  document.getElementById('finale').classList.add('show');
+  document.getElementById('finale').scrollIntoView({behavior:'smooth'});
+}
+
+/* ---------- tab switching ---------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.game').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('game-'+t.dataset.game).classList.add('active');
+  };
+});
+
+/* ============================================================
+   GAME 1 — WORDLE
+   ============================================================ */
+const WORDLE_ANSWER = "BRASS";   // <-- set your 5-letter answer (uppercase)
+const MAX_ROWS = 6;
+let wRow = 0, wOver = false;
+
+function buildWordle(){
+  const grid=document.getElementById('wordle-grid');
+  grid.innerHTML='';
+  for(let r=0;r<MAX_ROWS;r++){
+    const row=document.createElement('div'); row.className='row'; row.id='wrow-'+r;
+    for(let c=0;c<5;c++){
+      const cell=document.createElement('div'); cell.className='cell'; cell.id='w'+r+'-'+c;
+      row.appendChild(cell);
+    }
+    grid.appendChild(row);
+  }
+}
+function scoreGuess(guess){
+  const res=Array(5).fill('absent');
+  const ans=WORDLE_ANSWER.split('');
+  const taken=Array(5).fill(false);
+  for(let i=0;i<5;i++){ if(guess[i]===ans[i]){res[i]='correct';taken[i]=true;} }
+  for(let i=0;i<5;i++){
+    if(res[i]==='correct') continue;
+    for(let j=0;j<5;j++){
+      if(!taken[j] && guess[i]===ans[j]){res[i]='present';taken[j]=true;break;}
+    }
+  }
+  return res;
+}
+function submitWordle(){
+  if(wOver) return;
+  const entry=document.getElementById('wordle-entry');
+  const guess=entry.value.toUpperCase().trim();
+  if(guess.length!==5){ entry.style.borderColor='var(--wrong)'; return; }
+  entry.style.borderColor='';
+  const res=scoreGuess(guess);
+  for(let c=0;c<5;c++){
+    const cell=document.getElementById('w'+wRow+'-'+c);
+    cell.textContent=guess[c];
+    cell.classList.add('filled',res[c]);
+  }
+  entry.value='';
+  if(guess===WORDLE_ANSWER){
+    wOver=true;
+    const m=document.getElementById('wordle-win');
+    m.innerHTML='<span>Tumblers fall into place. Your first letter:</span><span class="frag">'+FRAGMENTS.wordle+'</span>';
+    m.classList.add('show');
+    markSolved('wordle');
+    return;
+  }
+  wRow++;
+  if(wRow>=MAX_ROWS){
+    wOver=true;
+    const m=document.getElementById('wordle-lose');
+    m.innerHTML='<div><strong>The lock holds.</strong> No guesses left this round. The word was hidden, not lost — reset and try again.<br><button class="btn" id="wordle-retry">Reset lock</button></div>';
+    m.classList.add('show');
+    document.getElementById('wordle-retry').onclick=resetWordle;
+  }
+}
+function resetWordle(){
+  wRow=0; wOver=false;
+  document.getElementById('wordle-win').classList.remove('show');
+  document.getElementById('wordle-lose').classList.remove('show');
+  buildWordle();
+}
+document.getElementById('wordle-go').onclick=submitWordle;
+document.getElementById('wordle-entry').addEventListener('keydown',e=>{if(e.key==='Enter')submitWordle();});
+
+/* ============================================================
+   GAME 2 — CONNECTIONS
+   ============================================================ */
+/* Four groups of four. Edit labels + members freely. */
+const CONN_GROUPS = [
+  { name:"Metals",   words:["BRASS","COPPER","IRON","TIN"] },
+  { name:"Gears",    words:["COG","RATCHET","SPRING","SPROCKET"] },
+  { name:"Keys",     words:["CIPHER","CODE","RIDDLE","SECRET"] },
+  { name:"Vessels",  words:["TUBE","CHAMBER","VIAL","SCROLL"] },
+];
+const CONN_MAX_MISTAKES = 4;
+let connSel=[], connMistakes=0, connSolvedGroups=0;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function buildConn(){
+  connSel=[]; connMistakes=0; connSolvedGroups=0;
+  const grid=document.getElementById('conn-grid'); grid.innerHTML='';
+  const all=[]; CONN_GROUPS.forEach(g=>g.words.forEach(w=>all.push(w)));
+  shuffle(all);
+  all.forEach(w=>{
+    const t=document.createElement('div'); t.className='conn-tile'; t.textContent=w; t.dataset.word=w;
+    t.onclick=()=>toggleConn(t);
+    grid.appendChild(t);
+  });
+  renderMistakes();
+  document.getElementById('conn-win').classList.remove('show');
+  document.getElementById('conn-lose').classList.remove('show');
+}
+function renderMistakes(){
+  let dots='';
+  for(let i=0;i<CONN_MAX_MISTAKES;i++) dots+='<span class="dot'+(i<connMistakes?' gone':'')+'"></span>';
+  document.getElementById('conn-mistakes').innerHTML='Mistakes remaining '+dots;
+}
+function toggleConn(t){
+  if(t.classList.contains('sel')){t.classList.remove('sel');connSel=connSel.filter(w=>w!==t.dataset.word);}
+  else if(connSel.length<4){t.classList.add('sel');connSel.push(t.dataset.word);}
+}
+function clearConn(){connSel=[];document.querySelectorAll('.conn-tile.sel').forEach(t=>t.classList.remove('sel'));}
+
+function submitConn(){
+  if(connSel.length!==4) return;
+  const match=CONN_GROUPS.find(g=>g.words.every(w=>connSel.includes(w)) && connSel.every(w=>g.words.includes(w)));
+  if(match){
+    const grid=document.getElementById('conn-grid');
+    document.querySelectorAll('.conn-tile.sel').forEach(t=>t.remove());
+    const bar=document.createElement('div'); bar.className='conn-solved';
+    bar.textContent=match.name.toUpperCase()+' — '+match.words.join(', ');
+    grid.prepend(bar);
+    connSel=[]; connSolvedGroups++;
+    if(connSolvedGroups===CONN_GROUPS.length){
+      const m=document.getElementById('conn-win');
+      m.innerHTML='<span>Every group aligned. Your second letter:</span><span class="frag">'+FRAGMENTS.conn+'</span>';
+      m.classList.add('show');
+      markSolved('conn');
+    }
+  } else {
+    connMistakes++;
+    renderMistakes();
+    clearConn();
+    if(connMistakes>=CONN_MAX_MISTAKES){
+      const m=document.getElementById('conn-lose');
+      m.innerHTML='<div><strong>The groups scatter.</strong> Too many wrong guesses. Shuffle the tiles and start the lock over.<br><button class="btn" id="conn-retry">Reset lock</button></div>';
+      m.classList.add('show');
+      document.getElementById('conn-retry').onclick=buildConn;
+    }
+  }
+}
+document.getElementById('conn-clear').onclick=clearConn;
+document.getElementById('conn-submit').onclick=submitConn;
+
+/* ============================================================
+   GAME 3 — MEMORY
+   ============================================================ */
+const MEM_ICONS = ["⚙","🔑","⏳","✉","🜂","☼","♆","✦"];  // 8 icons -> 8 pairs
+const MEM_MOVE_LIMIT = 0;   // 0 = unlimited. Set e.g. 20 to add a fail condition.
+let memFlipped=[], memMatched=0, memMoves=0, memLock=false;
+
+function buildMem(){
+  memFlipped=[]; memMatched=0; memMoves=0; memLock=false;
+  document.getElementById('mem-moves').textContent='Moves: 0';
+  document.getElementById('mem-win').classList.remove('show');
+  document.getElementById('mem-lose').classList.remove('show');
+  const grid=document.getElementById('mem-grid'); grid.innerHTML='';
+  const deck=shuffle([...MEM_ICONS,...MEM_ICONS]);
+  deck.forEach((icon,i)=>{
+    const card=document.createElement('div'); card.className='mem-card'; card.dataset.icon=icon;
+    card.innerHTML='<div class="mem-inner"><div class="mem-face mem-front"></div><div class="mem-face mem-back">'+icon+'</div></div>';
+    card.onclick=()=>flipMem(card);
+    grid.appendChild(card);
+  });
+}
+function flipMem(card){
+  if(memLock||card.classList.contains('flip')||card.classList.contains('matched')) return;
+  card.classList.add('flip');
+  memFlipped.push(card);
+  if(memFlipped.length===2){
+    memMoves++;
+    document.getElementById('mem-moves').textContent='Moves: '+memMoves;
+    memLock=true;
+    const [a,b]=memFlipped;
+    if(a.dataset.icon===b.dataset.icon){
+      setTimeout(()=>{
+        a.classList.add('matched'); b.classList.add('matched');
+        memFlipped=[]; memLock=false; memMatched++;
+        if(memMatched===MEM_ICONS.length){
+          const m=document.getElementById('mem-win');
+          m.innerHTML='<span>Every pair remembered. Your final letter:</span><span class="frag">'+FRAGMENTS.mem+'</span>';
+          m.classList.add('show');
+          markSolved('mem');
+        }
+      },420);
+    } else {
+      setTimeout(()=>{
+        a.classList.remove('flip'); b.classList.remove('flip');
+        memFlipped=[]; memLock=false;
+        if(MEM_MOVE_LIMIT>0 && memMoves>=MEM_MOVE_LIMIT && memMatched<MEM_ICONS.length){
+          const m=document.getElementById('mem-lose');
+          m.innerHTML='<div><strong>The pattern slips away.</strong> Out of moves. Clear your head and deal the tiles again.<br><button class="btn" id="mem-retry">Reset lock</button></div>';
+          m.classList.add('show');
+          document.getElementById('mem-retry').onclick=buildMem;
+        }
+      },800);
+    }
+  }
+}
+
+/* ============================================================
+   GAME 4 — CROSSWORD
+   ------------------------------------------------------------
+   Define the solution grid as rows of strings. Use "." for a
+   black/blocked square. Every other char is the answer letter.
+   Then list clues by their starting cell [row,col] (0-indexed)
+   and direction. Numbers are assigned automatically.
+   ============================================================ */
+const CROSS_SOLUTION = [
+  "STEAM",
+  "C...A",
+  "R...S",
+  "U...T",
+  "BRASS",
+];
+const CROSS_CLUES = {
+  across: [
+    { row:0, col:0, clue:"Vapor that once drove the engines" },
+    { row:4, col:0, clue:"Golden alloy of copper and zinc" },
+  ],
+  down: [
+    { row:0, col:0, clue:"Scour clean with a stiff brush" },
+    { row:0, col:4, clue:"Tall poles that carry the sails" },
+  ],
+};
+
+let crossNumbers = {};   // "r,c" -> number
+
+function buildCross(){
+  const grid=document.getElementById('cross-grid');
+  grid.innerHTML='';
+  crossNumbers={};
+  // assign numbers: any cell that starts an across or down run
+  let n=0;
+  const startSet=new Set();
+  CROSS_CLUES.across.concat(CROSS_CLUES.down).forEach(c=>startSet.add(c.row+','+c.col));
+  for(let r=0;r<CROSS_SOLUTION.length;r++){
+    for(let c=0;c<CROSS_SOLUTION[r].length;c++){
+      if(CROSS_SOLUTION[r][c]!=='.' && startSet.has(r+','+c)){
+        crossNumbers[r+','+c]=++n;
+      }
+    }
+  }
+  // build grid
+  for(let r=0;r<CROSS_SOLUTION.length;r++){
+    const row=document.createElement('div'); row.className='cross-row';
+    for(let c=0;c<CROSS_SOLUTION[r].length;c++){
+      const cell=document.createElement('div'); cell.className='cross-cell';
+      if(CROSS_SOLUTION[r][c]==='.'){ cell.classList.add('block'); }
+      else{
+        if(crossNumbers[r+','+c]){
+          const num=document.createElement('span'); num.className='cross-num';
+          num.textContent=crossNumbers[r+','+c]; cell.appendChild(num);
+        }
+        const inp=document.createElement('input');
+        inp.maxLength=1; inp.dataset.r=r; inp.dataset.c=c;
+        inp.addEventListener('input',e=>{
+          e.target.value=e.target.value.toUpperCase();
+          if(e.target.value){ focusNextCross(r,c); }
+        });
+        cell.appendChild(inp);
+      }
+      row.appendChild(cell);
+    }
+    grid.appendChild(row);
+  }
+  // render clues with their numbers
+  const aList=document.getElementById('cross-across'); aList.innerHTML='';
+  CROSS_CLUES.across.forEach(c=>{
+    const li=document.createElement('li');
+    li.innerHTML='<b>'+crossNumbers[c.row+','+c.col]+'</b><span>'+c.clue+'</span>';
+    aList.appendChild(li);
+  });
+  const dList=document.getElementById('cross-down'); dList.innerHTML='';
+  CROSS_CLUES.down.forEach(c=>{
+    const li=document.createElement('li');
+    li.innerHTML='<b>'+crossNumbers[c.row+','+c.col]+'</b><span>'+c.clue+'</span>';
+    dList.appendChild(li);
+  });
+  document.getElementById('cross-win').classList.remove('show');
+  document.getElementById('cross-lose').classList.remove('show');
+}
+function focusNextCross(r,c){
+  const next=document.querySelector('.cross-cell input[data-r="'+r+'"][data-c="'+(c+1)+'"]');
+  if(next) next.focus();
+}
+function checkCross(){
+  let allFilled=true, allCorrect=true;
+  document.querySelectorAll('.cross-cell input').forEach(inp=>{
+    const r=+inp.dataset.r, c=+inp.dataset.c;
+    const want=CROSS_SOLUTION[r][c];
+    const got=(inp.value||'').toUpperCase();
+    inp.parentElement.classList.remove('correct','wrong');
+    if(!got){ allFilled=false; allCorrect=false; return; }
+    if(got===want){ inp.parentElement.classList.add('correct'); }
+    else { inp.parentElement.classList.add('wrong'); allCorrect=false; }
+  });
+  if(allCorrect && allFilled){
+    const m=document.getElementById('cross-win');
+    m.innerHTML='<span>The grid is whole. Your fourth letter:</span><span class="frag">'+FRAGMENTS.cross+'</span>';
+    m.classList.add('show');
+    document.getElementById('cross-lose').classList.remove('show');
+    markSolved('cross');
+  } else {
+    const m=document.getElementById('cross-lose');
+    m.innerHTML='<div><strong>'+(allFilled?'Some squares resist.':'The grid is unfinished.')+'</strong> '+(allFilled?'The wrong letters are marked in red — fix them and check again.':'Fill every white square, then check the grid.')+'</div>';
+    m.classList.add('show');
+  }
+}
+document.getElementById('cross-check').onclick=checkCross;
+
+/* ============================================================
+   GAME 5 — CIPHER (Caesar shift)
+   ------------------------------------------------------------
+   CIPHER_PLAIN is the real message. It's shown shifted by
+   CIPHER_LOCKED_SHIFT; the player rotates the wheel to read it,
+   then types CIPHER_ANSWER to solve. (Answer can be the whole
+   phrase or a single keyword inside it.)
+   ============================================================ */
+const CIPHER_PLAIN  = "THE KEY IS HIDDEN IN PLAIN SIGHT";
+const CIPHER_LOCKED_SHIFT = 7;     // how scrambled it starts
+const CIPHER_ANSWER = "PLAIN SIGHT"; // what the player must type
+let cipherShift = 0;
+
+function caesar(str,shift){
+  return str.replace(/[A-Z]/g,ch=>
+    String.fromCharCode((ch.charCodeAt(0)-65+shift+26)%26+65));
+}
+function renderCipher(){
+  // base text = plaintext encoded by the locked shift; player's wheel decodes it
+  const encoded = caesar(CIPHER_PLAIN, CIPHER_LOCKED_SHIFT);
+  document.getElementById('cipher-text').textContent = caesar(encoded, cipherShift);
+  document.getElementById('cipher-amount').textContent = cipherShift;
+}
+function submitCipher(){
+  const val=(document.getElementById('cipher-entry').value||'').toUpperCase().trim();
+  if(val===CIPHER_ANSWER.toUpperCase()){
+    const m=document.getElementById('cipher-win');
+    m.innerHTML='<span>The message resolves. Your fifth letter:</span><span class="frag">'+FRAGMENTS.cipher+'</span>';
+    m.classList.add('show');
+    document.getElementById('cipher-lose').classList.remove('show');
+    markSolved('cipher');
+  } else {
+    const m=document.getElementById('cipher-lose');
+    m.innerHTML='<div><strong>Still gibberish.</strong> Keep turning the wheel until the words read true, then type the answer again.</div>';
+    m.classList.add('show');
+  }
+}
+document.getElementById('cipher-up').onclick=()=>{cipherShift=(cipherShift+1)%26;renderCipher();};
+document.getElementById('cipher-down').onclick=()=>{cipherShift=(cipherShift+25)%26;renderCipher();};
+document.getElementById('cipher-go').onclick=submitCipher;
+document.getElementById('cipher-entry').addEventListener('keydown',e=>{if(e.key==='Enter')submitCipher();});
+
+/* ============================================================
+   GAME 6 — FINAL LOCK (your Spotify music puzzle)
+   ------------------------------------------------------------
+   Set PASS_ANSWER to whatever the playlist reveals.
+   The full playlist is embedded in the HTML above (#pass-dummy).
+   Matching is case-insensitive and ignores surrounding spaces.
+   ============================================================ */
+const PASS_ANSWER = "CHANGE ME";                       // <-- the password your music puzzle leads to
+
+function submitPass(){
+  const val=(document.getElementById('pass-entry').value||'').toUpperCase().trim();
+  if(val===PASS_ANSWER.toUpperCase()){
+    const m=document.getElementById('pass-win');
+    m.innerHTML='<span>The melody was the key. Your final letter:</span><span class="frag">'+FRAGMENTS.pass+'</span>';
+    m.classList.add('show');
+    document.getElementById('pass-lose').classList.remove('show');
+    markSolved('pass');
+  } else {
+    const m=document.getElementById('pass-lose');
+    m.innerHTML='<div><strong>That isn\'t it.</strong> Listen again — the answer is in the music. Try once more.</div>';
+    m.classList.add('show');
+  }
+}
+document.getElementById('pass-go').onclick=submitPass;
+document.getElementById('pass-entry').addEventListener('keydown',e=>{if(e.key==='Enter')submitPass();});
+
+/* ---------- init ---------- */
+buildDials();
+buildWordle();
+buildConn();
+buildMem();
+buildCross();
+renderCipher();
+</script>
+</body>
+</html>
