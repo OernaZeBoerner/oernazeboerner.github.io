@@ -662,20 +662,33 @@ function flipMem(card){
    and direction. Numbers are assigned automatically.
    ============================================================ */
 const CROSS_SOLUTION = [
-  "STEAM",
-  "C...A",
-  "R...S",
-  "U...T",
-  "BRASS",
+  "....D.....",
+  "..TOILETTE",
+  "....E.....",
+  "JULIO.....",
+  "....M.W...",
+  "SCHLAFEND.",
+  "U.E...B...",
+  "D.I...ELKE",
+  "E.J...R...",
+  "L.I.......",
+  "M.........",
+  "A.........",
+  "N.........",
+  "N.........",
 ];
 const CROSS_CLUES = {
   across: [
-    { row:0, col:0, clue:"Vapor that once drove the engines" },
-    { row:4, col:0, clue:"Golden alloy of copper and zinc" },
+    { row:1, col:2, clue:"Ausgesprochen interessantes Klo" },        // TOILETTE
+    { row:3, col:0, clue:"Ohne ihn wird die Baustelle nichts" },     // JULIO
+    { row:5, col:0, clue:"So löst Kogoro Mori die meisten Fälle" },  // SCHLAFEND
+    { row:7, col:6, clue:"Isst gerne Popel in der Vorlesung" },      // ELKE
   ],
   down: [
-    { row:0, col:0, clue:"Scour clean with a stiff brush" },
-    { row:0, col:4, clue:"Tall poles that carry the sails" },
+    { row:0, col:4, clue:"Gruseligste TV Figur" },                   // DIEOMA
+    { row:4, col:6, clue:"Ein Lappen" },                             // WEBER
+    { row:5, col:0, clue:"Leicht wahnsinniger Ausruf in Dortmund" }, // SUDELMANN
+    { row:5, col:2, clue:"Detektiv des Westens" },                   // HEIJI
   ],
 };
 
