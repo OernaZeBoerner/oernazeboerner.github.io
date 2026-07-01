@@ -186,7 +186,17 @@
   .cross-col li b{color:var(--brass);font-family:ui-monospace,monospace;font-weight:400}
 
   /* ---- CIPHER ---- */
-  .cipher-shift{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:18px}
+  .cipher-hint{margin-bottom:18px}
+  .cipher-hint summary{
+    list-style:none;cursor:pointer;text-align:center;
+    font-family:ui-monospace,monospace;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--brass-dim);
+    padding:8px;border:1px dashed var(--line);border-radius:7px;transition:.2s;
+  }
+  .cipher-hint summary::-webkit-details-marker{display:none}
+  .cipher-hint summary:hover{color:var(--brass);border-color:var(--brass-dim)}
+  .cipher-hint[open] summary{color:var(--brass);margin-bottom:14px}
+  .cipher-shift{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:0}
   #cipher-amount{
     font-family:ui-monospace,monospace;font-size:22px;color:var(--brass);
     min-width:36px;text-align:center;
@@ -337,13 +347,16 @@
   <section class="game" id="game-cipher">
     <div class="panel">
       <h2>The Cipher</h2>
-      <p class="hint">A message, scrambled by a shift of the alphabet. Turn the wheel until the words make sense, then type what it says.</p>
-      <div class="cipher-shift">
-        <button class="btn" id="cipher-down">◀ shift</button>
-        <span id="cipher-amount">0</span>
-        <button class="btn" id="cipher-up">shift ▶</button>
-      </div>
+      <p class="hint">Type what the message says.</p>
       <div class="cipher-text" id="cipher-text"></div>
+      <details class="cipher-hint">
+        <summary>Need a hint?</summary>
+        <div class="cipher-shift">
+          <button class="btn" id="cipher-down">◀ shift</button>
+          <span id="cipher-amount">0</span>
+          <button class="btn" id="cipher-up">shift ▶</button>
+        </div>
+      </details>
       <div class="wordle-input">
         <input type="text" id="cipher-entry" placeholder="decoded answer" autocomplete="off">
         <button class="btn" id="cipher-go">Submit</button>
@@ -759,9 +772,9 @@ document.getElementById('cross-check').onclick=checkCross;
    then types CIPHER_ANSWER to solve. (Answer can be the whole
    phrase or a single keyword inside it.)
    ============================================================ */
-const CIPHER_PLAIN  = "THE KEY IS HIDDEN IN PLAIN SIGHT";
+const CIPHER_PLAIN  = "Its genetic code is irregular It may mutate if it is exposed to radiation from element stones";
 const CIPHER_LOCKED_SHIFT = 7;     // how scrambled it starts
-const CIPHER_ANSWER = "PLAIN SIGHT"; // what the player must type
+const CIPHER_ANSWER = "EVOLI"; // what the player must type
 let cipherShift = 0;
 
 function caesar(str,shift){
@@ -770,7 +783,7 @@ function caesar(str,shift){
 }
 function renderCipher(){
   // base text = plaintext encoded by the locked shift; player's wheel decodes it
-  const encoded = caesar(CIPHER_PLAIN, CIPHER_LOCKED_SHIFT);
+  const encoded = caesar(CIPHER_PLAIN.toUpperCase(), CIPHER_LOCKED_SHIFT);
   document.getElementById('cipher-text').textContent = caesar(encoded, cipherShift);
   document.getElementById('cipher-amount').textContent = cipherShift;
 }
