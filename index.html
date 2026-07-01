@@ -581,7 +581,7 @@ document.getElementById('conn-submit').onclick=submitConn;
    GAME 3 — MEMORY
    ============================================================ */
 const MEM_ICONS = ["⚙","🔑","⏳","✉","🜂","☼","♆","✦"];  // 8 icons -> 8 pairs
-const MEM_MOVE_LIMIT = 0;   // 0 = unlimited. Set e.g. 20 to add a fail condition.
+const MEM_MOVE_LIMIT = 16;   // 0 = unlimited. Must solve in this many moves or fewer.
 let memFlipped=[], memMatched=0, memMoves=0, memLock=false;
 
 function buildMem(){
@@ -612,10 +612,17 @@ function flipMem(card){
         a.classList.add('matched'); b.classList.add('matched');
         memFlipped=[]; memLock=false; memMatched++;
         if(memMatched===MEM_ICONS.length){
-          const m=document.getElementById('mem-win');
-          m.innerHTML='<span>Every pair remembered. Your final letter:</span><span class="frag">'+FRAGMENTS.mem+'</span>';
-          m.classList.add('show');
-          markSolved('mem');
+          if(MEM_MOVE_LIMIT>0 && memMoves>MEM_MOVE_LIMIT){
+            const m=document.getElementById('mem-lose');
+            m.innerHTML='<div><strong>The pattern slips away.</strong> Too many moves — solve it in '+MEM_MOVE_LIMIT+' or fewer. Clear your head and deal the tiles again.<br><button class="btn" id="mem-retry">Reset lock</button></div>';
+            m.classList.add('show');
+            document.getElementById('mem-retry').onclick=buildMem;
+          } else {
+            const m=document.getElementById('mem-win');
+            m.innerHTML='<span>Every pair remembered. Your final letter:</span><span class="frag">'+FRAGMENTS.mem+'</span>';
+            m.classList.add('show');
+            markSolved('mem');
+          }
         }
       },420);
     } else {
